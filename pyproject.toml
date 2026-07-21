@@ -8,7 +8,9 @@ dependencies = [
     "ddgs>=9.10.0",
     "fastmcp>=3.0.1",
     "openai>=2.16.0",
+    "pandas>=3.0.3",
     "pyyaml>=6.0.3",
+    "requests>=2.34.2",
 ]
 
 [project.scripts]
