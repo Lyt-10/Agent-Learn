@@ -21,6 +21,7 @@ from .grep import grep
 from .find import find
 from .ls import ls
 from .search import search
+from .rag import create_rag_tool
 from .tool_def import Tool, get_builtin_tools
 
 __all__ = [
@@ -36,4 +37,5 @@ __all__ = [
     # 工具定义
     "Tool",
     "get_builtin_tools",
+    "create_rag_tool",
 ]
