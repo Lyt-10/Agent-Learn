@@ -13,8 +13,8 @@
 
 from __future__ import annotations
 
-import fnmatch
 import os
+import re
 import uuid
 from pathlib import Path
 from typing import Any
@@ -65,7 +65,7 @@ class RAGEngine:
 
         if not model:
             raise ValueError(
-                "❌ EMBEDDING_MODEL_ID 未设置。请在 .env 中配置 embedding 模型。\n"
+                "EMBEDDING_MODEL_ID 未设置。请在 .env 中配置 embedding 模型。\n"
                 "   示例: EMBEDDING_MODEL_ID=text-embedding-3-small\n"
                 "   DeepSeek 不支持 embedding API，推荐使用 Kimi 或智谱的 embedding 服务。\n"
                 "   完整 .env 配置示例:\n"
@@ -83,7 +83,7 @@ class RAGEngine:
         self._client = chromadb.PersistentClient(path=persist_dir)
         self._collection = self._client.get_or_create_collection(
             name=collection_name,
-            embedding_function=self._embedding_fn,
+            embedding_function=self._embedding_fn,  # pyright: ignore[reportArgumentType]
         )
 
     # ── 索引方法 ──
@@ -104,7 +104,7 @@ class RAGEngine:
 
         self._collection.add(
             documents=[text],
-            metadatas=[metadata or {}],
+            metadatas=[metadata] if metadata else None,
             ids=[doc_id],
         )
         return doc_id
@@ -121,24 +121,24 @@ class RAGEngine:
         """
         path = Path(file_path)
         if not path.exists():
-            print(f"  [RAG] ⚠️ 文件不存在: {file_path}")
+            print(f"  [RAG] [WARN] 文件不存在: {file_path}")
             return []
 
         try:
             content = path.read_text(encoding="utf-8")
         except (OSError, UnicodeDecodeError) as e:
-            print(f"  [RAG] ⚠️ 读取文件失败: {file_path} — {e}")
+            print(f"  [RAG] [WARN] 读取文件失败: {file_path} — {e}")
             return []
 
         if not content.strip():
-            print(f"  [RAG] ⚠️ 文件为空: {file_path}")
+            print(f"  [RAG] [WARN] 文件为空: {file_path}")
             return []
 
         chunks = self._chunk_content(content, path.suffix.lower(), chunk_size)
 
         doc_ids = []
         for i, chunk in enumerate(chunks):
-            doc_id = f"{path.name}:{i}"
+            doc_id = f"{str(path)}:{i}"
             self.index_text(
                 text=chunk,
                 metadata={"source": str(path), "chunk_index": i},
@@ -166,7 +166,7 @@ class RAGEngine:
         """
         dir_path_obj = Path(dir_path)
         if not dir_path_obj.exists():
-            print(f"  [RAG] ⚠️ 目录不存在: {dir_path}")
+            print(f"  [RAG] [WARN] 目录不存在: {dir_path}")
             return {}
 
         # 解析扩展名列表
@@ -198,10 +198,10 @@ class RAGEngine:
 
         results = self._collection.query(query_texts=[query], n_results=min(top_k, self._collection.count()))
 
-        ids = results.get("ids", [[]])[0]
-        docs = results.get("documents", [[]])[0]
-        metas = results.get("metadatas", [[]])[0]
-        distances = results.get("distances", [[]])[0]
+        ids = (results["ids"] or [[]])[0]
+        docs = (results["documents"] or [[]])[0]
+        metas = (results["metadatas"] or [[]])[0]
+        distances = (results["distances"] or [[]])[0]
 
         items: list[dict[str, Any]] = []
         for i in range(len(ids)):
@@ -230,7 +230,7 @@ class RAGEngine:
 
         lines: list[str] = []
         for i, item in enumerate(items, 1):
-            source = item["metadata"].get("source", "unknown")
+            source = (item["metadata"] or {}).get("source", "unknown")
             dist = item["distance"]
             text = item["text"][:300]
             lines.append(f"[{i}] (相关度: {dist:.3f}) 来源: {source}\n{text}")
@@ -311,6 +311,7 @@ class RAGEngine:
                 if len(para) > max_size:
                     for i in range(0, len(para), max_size):
                         chunks.append(para[i:i + max_size])
+                    current = ""
                 else:
                     current = para
 
@@ -330,8 +331,6 @@ def _parse_suffixes(glob_pattern: str) -> set[str]:
     >>> _parse_suffixes("*.py")
     {'.py'}
     """
-    import re
-
     suffixes: set[str] = set()
     # 从模式中移除 * 号，提取扩展名
     # 处理 "*.{txt,md}" 这种 brace 模式

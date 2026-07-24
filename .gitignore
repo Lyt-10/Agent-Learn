@@ -25,3 +25,6 @@ note_modules/
 .vscode/
 *.swp
 *.swo
+
+# RAG / ChromaDB
+rag_data/
