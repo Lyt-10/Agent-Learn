@@ -50,10 +50,10 @@ def call_llm(
         "model": os.environ.get("OPENAI_MODEL_ID", "kimi-k2.5"),
         "messages": msgs,
     }
+    
     if tools:
         kwargs["tools"] = tools
         kwargs["tool_choice"] = "auto"
-
     client = OpenAI(
         api_key=os.environ.get("OPENAI_API_KEY"),
         base_url=os.environ.get("OPENAI_BASE_URL"),
