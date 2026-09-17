@@ -47,6 +47,7 @@ def get_builtin_tools() -> List[Tool]:
     from .find import find
     from .ls import ls
     from .search import search
+    from .rag import rag_search    
 
     return [
         Tool(
@@ -153,6 +154,26 @@ def get_builtin_tools() -> List[Tool]:
                 "required": ["query"],
             },
             fn=search,
+        ),
+        
+        Tool(
+            name="rag_search",
+            description=(
+                "Search the local knowledge base (vector store) for document passages "
+                "relevant to a question. Prefer this over grep when the question is "
+                "semantic ('怎么防止上下文超长') rather than literal. "
+                "Returns passages with their source file, so cite the source in the answer."
+            ),
+            parameters={
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string", "description": "Natural language question or keywords"},
+                    "top_k": {"type": "integer", "description": "How many passages to return (3-5 recommended)"},
+                    "source": {"type": "string", "description": "Optional: restrict to one exact file path"},
+                },
+                "required": ["query"],
+            },
+            fn=rag_search,
         ),
     ]
 

@@ -127,6 +127,9 @@ def demo() -> None:
 
     executor = ToolExecutor()
 
+    # 基于本文件定位 tools/ 目录，用绝对路径，从任何目录启动都能成功
+    tools_dir = Path(__file__).parent
+
     # 模拟 LLM 返回的 assistant 消息
     assistant_message: dict[str, Any] = {
         "role": "assistant",
@@ -137,7 +140,7 @@ def demo() -> None:
                 "type": "function",
                 "function": {
                     "name": "ls",
-                    "arguments": '{"path": "tools"}'
+                    "arguments": json.dumps({"path": str(tools_dir)})
                 }
             },
             {
@@ -145,7 +148,8 @@ def demo() -> None:
                 "type": "function",
                 "function": {
                     "name": "bash",
-                    "arguments": '{"command": "pwd"}'
+                    # 跨平台写法：cmd 和 bash 都能跑（pwd/ls 是 Unix 专有命令）
+                    "arguments": json.dumps({"command": 'python -c "import os; print(os.getcwd())"'})
                 }
             }
         ]

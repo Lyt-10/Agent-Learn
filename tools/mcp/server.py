@@ -2,6 +2,14 @@
 
 from __future__ import annotations
 
+import sys
+from pathlib import Path
+
+# 被客户端当子进程 spawn 时，sys.path[0] 是「本文件所在目录」(tools/mcp)，
+# 里面没有 tools 包。把项目根目录加进来，工具函数里的 `from tools...import`
+# 才能成功。
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+
 from fastmcp import FastMCP
 
 
