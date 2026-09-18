@@ -120,9 +120,11 @@ def run_chat() -> None:
     tool_call = ToolCallNode()
     output = OutputNode()
 
-    chat - "tool_call" >> tool_call
-    tool_call - "chat" >> chat
-    chat - "output" >> output
+    # `- "动作"` 和 `>>` 是 Node 的运算符重载，靠副作用登记边（写 self.successors），
+    # 返回值是链式语法的残留、故意丢弃。所以逐行豁免这条规则，而不是全局关掉它。
+    chat - "tool_call" >> tool_call          # pyright: ignore[reportUnusedExpression]
+    tool_call - "chat" >> chat               # pyright: ignore[reportUnusedExpression]
+    chat - "output" >> output                # pyright: ignore[reportUnusedExpression]
 
     while True:
         user_input = input("👤 You: ").strip()
